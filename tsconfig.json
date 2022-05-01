@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "removeComments": true,
+    "module": "None",
+    "outFile": "./target/plugin.tmp.js",
+    "rootDir": "./src",
+    "strict": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
+  }
+}
