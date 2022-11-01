@@ -1,27 +1,35 @@
 () => {
-    const PK_TOKEN = "TOKEN GOES HERE"
+    const PK_TOKEN = "QUEEEEEEEEEEEEER"
     const API_URL = "https://api.pluralkit.me/v2/"
     const MEMBERS_URL = "systems/@me/members"
 
-    function getPluralKitMembers() {
-        fetch(API_URL+MEMBERS_URL, {
+    async function getPluralKitMembers() {
+        console.log("[PkRv] Getting member list")
+        var res = await fetch(API_URL+MEMBERS_URL, {
             headers: {'Authorization': PK_TOKEN}
-        }).then(res => {
-            return res.json();
-        });
+        })
+        
+        let data = res.json()
+        console.log("[PkRv] Recieved JSON: "+data)
+        return data
     }
 
-    const members: any = getPluralKitMembers();
+    let members: any;
+    getPluralKitMembers().then(m => {members = m})
 
     const client: import('revolt.js').Client = (window as any).controllers.client.getReadyClient();
-    console.log('Received Client:', client.user.username);
+    console.log('[PkRv] Received Client:', client.user.username);
 
     client.on("message", async (message) => {
         if (message.author == client.user) {
+            console.log("[PkRv] Message was ours")
             var m: any = null;
 
+            console.log("[PkRv] Iterating through members")
             for (let member in members) {
+                console.log("[PkRv] On member "+member['name'])
                 for (let proxy in member['proxy_tags']) {
+                    console.log("[PkRv] Proxy tag: "+proxy)
                     if (proxy['prefix'] && proxy['suffix']) {
                         if (message.content.startsWith(proxy['prefix']) && message.content.endsWith(proxy['suffix'])) {
                             m = member;
@@ -57,13 +65,14 @@
 
                 await message.channel!.sendMessage(msgData);
                 await message.delete()
+                console.log("[PkRv] Sent message with masq")
             }
         }
     });
 
     return ({
         onUnload: () => {
-            console.log('Plugin unloaded');
+            console.log('[PkRv] Plugin unloaded');
         }
     });
 };
