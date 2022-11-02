@@ -8,8 +8,8 @@
         var res = await fetch(API_URL+MEMBERS_URL, {
             headers: {'Authorization': PK_TOKEN}
         })
-        
-        let data = res.json()
+
+        let data = await res.json()
         console.log("[PkRv] Recieved JSON: "+data)
         return data
     }
@@ -17,7 +17,10 @@
     let members: any;
     getPluralKitMembers().then(m => {members = m})
 
-    const client: import('revolt.js').Client = (window as any).controllers.client.getReadyClient();
+    var client: import('revolt.js').Client = null;
+    while (client == null) {
+      client = (window as any).controllers.client.getReadyClient();
+    }
     console.log('[PkRv] Received Client:', client.user.username);
 
     client.on("message", async (message) => {
@@ -26,9 +29,12 @@
             var m: any = null;
 
             console.log("[PkRv] Iterating through members")
-            for (let member in members) {
+            for (let memberIndex in members) {
+                let member = members[memberIndex]
                 console.log("[PkRv] On member "+member['name'])
-                for (let proxy in member['proxy_tags']) {
+                for (let proxyIndex in member['proxy_tags']) {
+                    let proxy = member['proxy_tags'][proxyIndex]
+
                     console.log("[PkRv] Proxy tag: "+proxy)
                     if (proxy['prefix'] && proxy['suffix']) {
                         if (message.content.startsWith(proxy['prefix']) && message.content.endsWith(proxy['suffix'])) {
