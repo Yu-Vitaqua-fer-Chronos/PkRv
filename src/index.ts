@@ -31,7 +31,7 @@
         channel['origSend'] = channel.sendMessage;
         channel.sendMessage = async function(data: string | (Omit<{ attachments?: null | string[]; content?: null | string; embeds?: null | { colour?: null | string; description?: null | string; icon_url?: null | string; media?: null | string; title?: null | string; url?: null | string }[]; interactions?: null | { reactions?: null | string[]; restrict_reactions?: boolean }; masquerade?: null | { avatar?: null | string; colour?: null | string; name?: null | string }; nonce?: null | string; replies?: null | { id: string; mention: boolean }[] }, "nonce"> & { nonce?: string })): Promise<any> {
             var msgData: any = {}
-            
+
             if (data['content']) {
                 msgData = data;
             } else {
@@ -44,7 +44,6 @@
             outer: for (let member of members) {
                 console.log("[PkRv] On member "+member.name)
                 for (let proxy of member.proxy_tags) {
-
                     if (msgData.content.startsWith(proxy.prefix || "") && msgData.content.endsWith(proxy.suffix || "")) {
                         m = member;
                         proxy_tag = proxy;
