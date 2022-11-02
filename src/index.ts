@@ -24,6 +24,8 @@
     console.log('[PkRv] Received Client:', client.user.username);
 
     client.on("message", async (message) => {
+        if (message.nonce == "DO_NOT_PROCESS") {return}
+
         if (message.author == client.user) {
             console.log("[PkRv] Message was ours")
             var m: any = null;
@@ -57,16 +59,20 @@
             }
 
             if (m != null) {
-                var msgData = {masquerade: {}}
+                var msgData = {
+                  content: message.content,
+                  masquerade: {},
+                  nonce: "DO_NOT_PROCESS"
+                }
 
                 if (m["display_name"]) {
-                    msgData['name'] = m["display_name"]
+                    msgData['masquerade']['name'] = m["display_name"]
                 } else {
-                    msgData['name'] = m["name"]
+                    msgData['masquerade']['name'] = m["name"]
                 }
 
                 if (m["avatar_url"]) {
-                    msgData['avatar'] = m["avatar_url"]
+                    msgData['masquerade']['avatar'] = m["avatar_url"]
                 }
 
                 await message.channel!.sendMessage(msgData);
