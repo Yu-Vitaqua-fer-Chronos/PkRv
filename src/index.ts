@@ -1,13 +1,17 @@
 () => {
+    var script = document.createElement('script')
+    script.src = "https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js";
+    document.body.appendChild(script);
+
     const PK_TOKEN = "QUEEEEEEEEEEEEER"
     const API_URL = "https://api.pluralkit.me/v2/"
     const SYSTEM_URL = "systems/@me/"
     const MEMBERS_URL = "members"
 
-   function getPluralKitSystemTag() {
+    function getPluralKitSystemTag() {
         fetch(API_URL+SYSTEM_URL, {
             headers: {'Authorization': PK_TOKEN}
-        }).then(res => res.json()).then(sys => {return sys.tag});
+        }).then(res => res.json().then(sys => {return sys.tag}));
     }
 
     let SYSTEM_TAG = getPluralKitSystemTag();
@@ -84,6 +88,15 @@
 
                 // Set the masquerade object.
                 msgData.masquerade.name = `${(m.display_name || m.name)} ${SYSTEM_TAG}`
+                if (msgData.masquerade.name.length > 32) {
+                    msgData.masquerade.name = (m.display_name || m.name)
+                } if (msgData.masquerade.name.length > 32) {
+                    msgData.masquerade.name = `${m.name} ${SYSTEM_TAG}`
+                } if (msgData.masquerade.name.length > 32) {
+                    msgData.masquerade.name = m.name
+                } if (msgData.masquerade.name.length > 32) {
+                    msgData.masquerade.name = "NAME TOO BIG"
+                }
                 msgData.masquerade.avatar = m.avatar_url
             }
 
@@ -92,19 +105,23 @@
         }
     }
 
-    var client: import('revolt.js').Client = client = (window as any).controllers.client.getReadyClient();
+    setTimeout(function yourFunction() {
+        var client: import('revolt.js').Client = client = (window as any).controllers.client.getReadyClient();
 
-    client.on("message", async (message) => {
-        if (message.author == client.user && !monkeyPatchedChannels.has(message.channel)) {
-            monkeypatchChannelSend(message.channel);
+        client.on("message", async (message) => {
+            if (message.author == client.user && !monkeyPatchedChannels.has(message.channel)) {
+                monkeypatchChannelSend(message.channel);
 
-            await message.channel!.sendMessage(message.content);
-            await message.delete()
-        }
-    });
+                await message.channel!.sendMessage(message.content);
+                await message.delete()
+            }
+        });
+    }, 3e3)
 
     return ({
         onUnload: () => {
+            script.remove()
+
             for (let channel of monkeyPatchedChannels.keys()) {
                 channel.sendMessage = channel['origSend'];
             }
