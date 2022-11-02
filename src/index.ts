@@ -27,9 +27,9 @@
             monkeyPatchedChannels.set(channel, true)
         }
 
-        let origSend = channel.sendMessage;
+        var origSend = channel.sendMessage;
 
-        async function customSendMessage(data: string | (Omit<{ attachments?: null | string[]; content?: null | string; embeds?: null | { colour?: null | string; description?: null | string; icon_url?: null | string; media?: null | string; title?: null | string; url?: null | string }[]; interactions?: null | { reactions?: null | string[]; restrict_reactions?: boolean }; masquerade?: null | { avatar?: null | string; colour?: null | string; name?: null | string }; nonce?: null | string; replies?: null | { id: string; mention: boolean }[] }, "nonce"> & { nonce?: string })): Promise<any> {
+        channel.sendMessage = async function(data: string | (Omit<{ attachments?: null | string[]; content?: null | string; embeds?: null | { colour?: null | string; description?: null | string; icon_url?: null | string; media?: null | string; title?: null | string; url?: null | string }[]; interactions?: null | { reactions?: null | string[]; restrict_reactions?: boolean }; masquerade?: null | { avatar?: null | string; colour?: null | string; name?: null | string }; nonce?: null | string; replies?: null | { id: string; mention: boolean }[] }, "nonce"> & { nonce?: string })): Promise<any> {
             var msgData: any = {}
             
             if (data['content']) {
@@ -89,13 +89,11 @@
             }
 
             try {
-                origSend(msgData);
+                await origSend(msgData);
             } catch (error) {
-                origSend(data);
+                await origSend(data);
             }
         }
-
-        channel.sendMessage = customSendMessage
     }
 
     var client: import('revolt.js').Client = client = (window as any).controllers.client.getReadyClient();
