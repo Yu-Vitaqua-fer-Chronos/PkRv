@@ -27,8 +27,8 @@
             monkeyPatchedChannels.set(channel, true)
         }
 
-        var origSend = channel.sendMessage;
-
+		// Assigning right back on channel is required to be able to reuse it.
+        channel['origSend'] = channel.sendMessage;
         channel.sendMessage = async function(data: string | (Omit<{ attachments?: null | string[]; content?: null | string; embeds?: null | { colour?: null | string; description?: null | string; icon_url?: null | string; media?: null | string; title?: null | string; url?: null | string }[]; interactions?: null | { reactions?: null | string[]; restrict_reactions?: boolean }; masquerade?: null | { avatar?: null | string; colour?: null | string; name?: null | string }; nonce?: null | string; replies?: null | { id: string; mention: boolean }[] }, "nonce"> & { nonce?: string })): Promise<any> {
             var msgData: any = {}
             
@@ -41,58 +41,32 @@
             var m: any = null;
             var proxy_tag: any = null;
 
-            for (let memberIndex in members) {
-                let member = members[memberIndex]
-                console.log("[PkRv] On member "+member['name'])
-                for (let proxyIndex in member['proxy_tags']) {
-                    let proxy = member['proxy_tags'][proxyIndex]
+            outer: for (let member of members) {
+                console.log("[PkRv] On member "+member.name)
+                for (let proxy of member.proxy_tags) {
 
-                    if (proxy['prefix'] != null && proxy['suffix'] != null && proxy['prefix'] != undefined && proxy['suffix'] != undefined) {
-                        if (msgData.content.startsWith(proxy['prefix']) && msgData.content.endsWith(proxy['suffix'])) {
-                            m = member;
-                            proxy_tag = proxy;
-                            break;
-                        }
-                    } else if (proxy['prefix'] != null && proxy['prefix'] != undefined) {
-                        if (msgData.content.startsWith(proxy['prefix'])) {
-                            m = member;
-                            proxy_tag = proxy;
-                            break;
-                        }
-                    } else {
-                        if (msgData.content.endsWith(proxy['suffix'])) {
-                            m = member;
-                            proxy_tag = proxy;
-                            break;
-                        }
+					if (msgData.content.startsWith(proxy.prefix || "") && msgData.content.endsWith(proxy.suffix || "")) {
+                        m = member;
+                        proxy_tag = proxy;
+                        break outer;
                     }
                 }
-                if (m != null) {break}
-            }
-            
-            msgData['masquerade'] = {}
-
-            if (proxy_tag['prefix'] != null && proxy_tag['prefix'] != undefined) {
-              msgData.content = msgData.content.slice(proxy_tag['prefix'].length);
-            } else if (proxy_tag['suffix'] != null && proxy_tag['suffix'] != undefined) {
-              msgData.content = msgData.content.slice(undefined, -(proxy_tag['suffix'].length));
             }
 
-            if (m["display_name"]) {
-                msgData['masquerade']['name'] = m["display_name"]
-            } else {
-                msgData['masquerade']['name'] = m["name"]
+            if(m) {
+                msgData.masquerade = {}
+
+                var start = proxy_tag.prefix?.length ?? 0
+                var end = msgData.content.length - (proxy_tag.suffix?.length ?? 0)
+
+                msgData.content = msgData.content.slice(start, end);
+
+				// Set the masquerade object.
+                msgData.masquerade.name = m.display_name || m.name
+                msgData.masquerade.avatar = m.avatar_url
             }
 
-            if (m["avatar_url"]) {
-                msgData['masquerade']['avatar'] = m["avatar_url"]
-            }
-
-            try {
-                await origSend(msgData);
-            } catch (error) {
-                await origSend(data);
-            }
+            await this.origSend(msgData);
         }
     }
 
@@ -100,12 +74,12 @@
     console.log('[PkRv] Received Client:', client.user.username);
 
     client.on("message", async (message) => {
-        if (message.author == client.user) {
+        if (message.author == client.user && !monkeyPatchedChannels.has(message.channel)) {
+            monkeypatchChannelSend(message.channel);
 
-            if (!monkeyPatchedChannels.has(message.channel)) {
-                monkeypatchChannelSend(message.channel);
-            }
-
+            // There is *no* reason to do this after monkey patching.
+            // Do not set this outside of monkey patching as this *will*
+            // cause an endless loop until ratelimiting.
             await message.channel!.sendMessage(message.content);
             await message.delete()
         }
